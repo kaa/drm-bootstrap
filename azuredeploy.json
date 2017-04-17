@@ -12,6 +12,9 @@
     "repositoryBranch": {
       "type": "string",
       "defaultValue": "master"
+    },
+    "githubToken": {
+      "type": "string"
     }
   },
   "variables": {
@@ -32,12 +35,6 @@
       "serverFarmId": "[variables('serverFarmName')]",
       "siteConfig": {
         "appSettings": [{
-          "name": "FUNCTIONS_EXTENSION_VERSION",
-          "value": "~1"
-        }, {
-          "name": "ROUTING_EXTENSION_VERSION",
-          "value": "~0.2"
-        }, {
           "name": "AzureWebJobsStorage",
           "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageName'), ';AccountKey=', listKeys(variables('storageId'),'2015-05-01-preview').key1)]"
         }, {
@@ -49,6 +46,15 @@
         }, {
           "name": "WEBSITE_CONTENTSHARE",
           "value": "[toLower(variables('appName'))]"
+        },{
+          "name": "FUNCTIONS_EXTENSION_VERSION",
+          "value": "~1"
+        }, {
+          "name": "ROUTING_EXTENSION_VERSION",
+          "value": "~0.2"
+        }, {
+          "name": "GITHUB_TOKEN",
+          "value": "[parameters('githubToken')]"
         }]
       }
     },
