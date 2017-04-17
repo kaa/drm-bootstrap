@@ -15,7 +15,7 @@
     }
   },
   "variables": {
-    "appName": "[concat(parameters('name'),'-proxyfn']",
+    "appName": "[concat(parameters('name'),'-proxyfn')]",
     "serverFarmName": "[concat(parameters('name'),'-fnasp')]",
     "storageName": "[concat(replace(parameters('name'),'-',''),'storage')]",
     "storageId": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]",
