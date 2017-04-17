@@ -36,6 +36,21 @@
     "location": "[resourceGroup().location]",
     "properties": {}
   },{
+    "type": "Microsoft.Web/serverfarms",
+    "apiVersion": "2016-03-01",
+    "name": "[variables('serverFarmName')]",
+    "location": "[resourceGroup().location]",
+    "properties": {
+      "name": "[variables('serverFarmName')]"
+    },
+    "sku": {
+      "name": "Y1",
+      "tier": "Dynamic",
+      "size": "Y1",
+      "family": "Y",
+      "capacity": 0
+    }
+  },{
     "apiVersion": "2016-03-01",
     "name": "[variables('appName')]",
     "type": "Microsoft.Web/sites",
