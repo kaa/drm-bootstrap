@@ -26,11 +26,24 @@
     "repositoryBranch": "[parameters('repositoryBranch')]"
   },
   "resources": [{
+    "name": "[variables('storageName')]",
+    "type": "Microsoft.Storage/storageAccounts",
+    "apiVersion": "2016-05-01",
+    "sku": {
+      "name": "Standard_GRS"
+    },
+    "kind": "Storage",
+    "location": "[resourceGroup().location]",
+    "properties": {}
+  },{
     "apiVersion": "2016-03-01",
     "name": "[variables('appName')]",
     "type": "Microsoft.Web/sites",
     "kind": "functionapp",
     "location": "[resourceGroup().location]",
+    "dependsOn": [
+      "[variables('storageName')]"
+    ],
     "properties": {
       "serverFarmId": "[variables('serverFarmName')]",
       "siteConfig": {
