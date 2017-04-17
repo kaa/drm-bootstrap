@@ -57,7 +57,8 @@
     "kind": "functionapp",
     "location": "[resourceGroup().location]",
     "dependsOn": [
-      "[variables('storageName')]"
+      "[variables('storageName')]",
+      "[variables('serverFarmName')]"
     ],
     "properties": {
       "serverFarmId": "[variables('serverFarmName')]",
