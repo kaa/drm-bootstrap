@@ -1,0 +1,10 @@
+{
+    "proxies": {
+        "short": {
+            "matchCondition": {
+                "route": "/{fn}/{*path}"
+            },
+            "backendUri": "https://%HTTP_HOST%/api/{fn}?path={path}"
+        }
+    }
+}

@@ -1,0 +1,70 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "name": {
+      "type": "string"
+    },
+    "repositoryUrl": {
+      "type": "string",
+      "defaultValue": "https://github.com/mios-fi/drm-bootstrap.git"
+    },
+    "repositoryBranch": {
+      "type": "string",
+      "defaultValue": "master"
+    }
+  },
+  "variables": {
+    "appName": "[concat(parameters('name'),'-proxyfn']",
+    "serverFarmName": "[concat(parameters('name'),'-fnasp')]",
+    "storageName": "[concat(replace(parameters('name'),'-',''),'storage')]",
+    "storageId": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]",
+    "repositoryUrl": "[parameters('repositoryUrl')]",
+    "repositoryBranch": "[parameters('repositoryBranch')]"
+  },
+  "resources": [{
+    "apiVersion": "2016-03-01",
+    "name": "[variables('appName')]",
+    "type": "Microsoft.Web/sites",
+    "kind": "functionapp",
+    "location": "[resourceGroup().location]",
+    "properties": {
+      "serverFarmId": "[variables('serverFarmName')]",
+      "siteConfig": {
+        "appSettings": [{
+          "name": "FUNCTIONS_EXTENSION_VERSION",
+          "value": "~1"
+        }, {
+          "name": "ROUTING_EXTENSION_VERSION",
+          "value": "~0.2"
+        }, {
+          "name": "AzureWebJobsStorage",
+          "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageName'), ';AccountKey=', listKeys(variables('storageId'),'2015-05-01-preview').key1)]"
+        }, {
+          "name": "AzureWebJobsDashboard",
+          "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageName'), ';AccountKey=', listKeys(variables('storageId'),'2015-05-01-preview').key1)]"
+        }, {
+          "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
+          "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageName'), ';AccountKey=', listKeys(variables('storageId'),'2015-05-01-preview').key1)]"
+        }, {
+          "name": "WEBSITE_CONTENTSHARE",
+          "value": "[toLower(variables('appName'))]"
+        }]
+      }
+    },
+    "resources": [{
+        "apiVersion": "2015-08-01",
+        "name": "scm",
+        "type": "sourcecontrols",
+        "properties": {
+          "mode": "Complete",
+          "repoUrl": "[parameters('repositoryUrl')]",
+          "branch": "[parameters('repositoryBranch')]",
+          "isManualIntegration": false,
+          "deploymentRollbackEnabled": false,
+          "isMercurial": false
+        }
+      }
+    ]
+  }]
+}
