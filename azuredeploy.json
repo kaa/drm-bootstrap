@@ -3,6 +3,10 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "name": {
+      "type": "string",
+      "defaultValue": "[replace(resourceGroup().name,'-rg','')]"
+    },
+    "githubToken": {
       "type": "string"
     },
     "repositoryUrl": {
@@ -12,9 +16,6 @@
     "repositoryBranch": {
       "type": "string",
       "defaultValue": "master"
-    },
-    "githubToken": {
-      "type": "string"
     }
   },
   "variables": {
