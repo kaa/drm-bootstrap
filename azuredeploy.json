@@ -2,10 +2,6 @@
   "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "name": {
-      "type": "string",
-      "defaultValue": "[replace(resourceGroup().name,'-rg','')]"
-    },
     "githubToken": {
       "type": "string"
     },
@@ -19,9 +15,10 @@
     }
   },
   "variables": {
-    "appName": "[concat(parameters('name'),'-proxyfn')]",
-    "serverFarmName": "[concat(parameters('name'),'-fnasp')]",
-    "storageName": "[concat(replace(parameters('name'),'-',''),'storage')]",
+    "baseName": "[replace(resourceGroup().name,'-rg','')]",
+    "appName": "[concat(variables('baseName'),'-proxyfn')]",
+    "serverFarmName": "[concat(variables('baseName'),'-fnasp')]",
+    "storageName": "[concat(replace(variables('baseName'),'-',''),'storage')]",
     "storageId": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]",
     "repositoryUrl": "[parameters('repositoryUrl')]",
     "repositoryBranch": "[parameters('repositoryBranch')]"
