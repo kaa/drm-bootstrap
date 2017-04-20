@@ -2,9 +2,9 @@
     "proxies": {
         "short": {
             "matchCondition": {
-                "route": "/{fn}/{*path}"
+                "route": "/proxy/{*path}"
             },
-            "backendUri": "https://%WEBSITE_HOSTNAME%/api/{fn}?path={path}"
+            "backendUri": "https://%WEBSITE_HOSTNAME%/api/proxy?path={path}"
         }
     }
 }
