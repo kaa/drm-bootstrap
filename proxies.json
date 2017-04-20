@@ -4,7 +4,7 @@
             "matchCondition": {
                 "route": "/{fn}/{*path}"
             },
-            "backendUri": "https://%HTTP_HOST%/api/{fn}?path={path}"
+            "backendUri": "https://%WEBSITE_HOSTNAME%/api/{fn}?path={path}"
         }
     }
 }
