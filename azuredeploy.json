@@ -9,17 +9,12 @@
       "type": "string",
       "defaultValue": ""
     },
-    "pfxBlob": {
+    "certificate": {
       "type": "securestring",
-      "defaultValue": ""
-    },
-    "pfxPassword": {
-      "type": "string",
-      "defaultValue": ""
-    },
-    "certThumbprint": {
-      "type": "string",
-      "defaultValue": ""
+      "defaultValue": "",
+      "metadata": {
+        "description": "base64 encoded pfx"
+      }
     },
     "repositoryUrl": {
       "type": "string",
@@ -80,36 +75,28 @@
     ],
     "armCNAME": "[concat(variables('appName'),'.azurewebsites.net')]",
     "certName": "[concat(variables('dnsZone'),'-cert')]",
-    "certThumbprint": "[replace(parameters('certThumbprint'),' ','')]",
-    "tlsToggle": "[mul(length(replace(take(string(length(parameters('pfxBlob'))),1),'0','')),variables('dnsToggle'))]",
+    "tlsToggle": "[mul(length(replace(take(string(length(parameters('certificate'))),1),'0','')),variables('dnsToggle'))]",
     "tlsResources": [
       [],
       [{
-        "name": "[variables('certName')]",
         "apiVersion": "2016-03-01",
+        "name": "[variables('certName')]",
         "type": "Microsoft.Web/certificates",
         "location": "[resourceGroup().location]",
         "properties": {
-          "pfxBlob": "[parameters('pfxBlob')]",
-          "password": "[parameters('pfxPassword')]"
+          "pfxBlob": "[parameters('certificate')]",
+          "password": ""
         }
-      },{
-         "type":"Microsoft.Web/sites",
-         "name":"[variables('appName')]",
-         "apiVersion":"2016-03-01",
-         "location":"[resourceGroup().location]",
-         "dependsOn":["[variables('certName')]"],
-         "properties":{
-            "name":"[variables('appName')]",
-            "hostNameSslStates":[
-               {
-                  "name":"[concat('arm.',variables('dnsZone'))]",
-                  "sslState":"SniEnabled",
-                  "thumbprint":"[variables('certThumbprint')]",
-                  "toUpdate":true
-               }
-            ]
-         }
+      }, {
+        "apiVersion": "2016-08-01",
+        "name": "[concat(variables('appName'),'/arm.',variables('dnsZone'))]",
+        "type": "Microsoft.Web/sites/hostNameBindings",
+        "location": "[resourceGroup().location]",
+        "dependsOn": ["[variables('certName')]"],
+        "properties": {
+          "sslState": "SniEnabled",
+          "thumbprint": "[[reference(resourceId('Microsoft.Web/certificates', parameters('certName'))).thumbprint]"
+        }
       }]
     ]
   },
@@ -215,12 +202,18 @@
       "template": {
         "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
         "contentVersion": "1.0.0.0",
-        "variables": {
-          "foo":"bar"
+        "parameters": {
+          "certName": {
+            "type": "string"
+          }
         },
         "resources": "[variables('tlsResources')[variables('tlsToggle')]]"
       },
-      "parameters": {}
+      "parameters": {
+        "certName": {
+          "value": "[variables('certName')]"
+        }
+      }
     }
   }]
 }
