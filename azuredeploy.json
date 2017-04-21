@@ -5,6 +5,22 @@
     "githubToken": {
       "type": "string"
     },
+    "zone": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "pfxBlob": {
+      "type": "securestring",
+      "defaultValue": ""
+    },
+    "pfxPassword": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "certThumbprint": {
+      "type": "string",
+      "defaultValue": ""
+    },
     "repositoryUrl": {
       "type": "string",
       "defaultValue": "https://github.com/mios-fi/drm-bootstrap.git"
@@ -16,12 +32,86 @@
   },
   "variables": {
     "baseName": "[replace(resourceGroup().name,'-rg','')]",
-    "appName": "[concat(variables('baseName'),'-proxyfn')]",
+    "appName": "[concat(variables('baseName'),'-armfn')]",
     "serverFarmName": "[concat(variables('baseName'),'-fnasp')]",
     "storageName": "[concat(replace(variables('baseName'),'-',''),'storage')]",
     "storageId": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]",
     "repositoryUrl": "[parameters('repositoryUrl')]",
-    "repositoryBranch": "[parameters('repositoryBranch')]"
+    "repositoryBranch": "[parameters('repositoryBranch')]",
+    "dnsZone": "[parameters('zone')]",
+    "dnsToggle": "[length(replace(take(string(length(parameters('zone'))),1),'0',''))]",
+    "dnsResources": [
+      [],
+      [{
+          "type": "Microsoft.Network/dnszones",
+          "name": "[variables('dnsZone')]",
+          "apiVersion": "2016-04-01",
+          "location": "global",
+          "properties": {}
+        },
+        {
+          "type": "Microsoft.Network/dnszones/CNAME",
+          "name": "[concat(variables('dnsZone'), '/arm')]",
+          "apiVersion": "2016-04-01",
+          "location": "global",
+          "dependsOn": [
+            "[variables('dnsZone')]"
+          ],
+          "properties": {
+            "TTL": 3600,
+            "CNAMERecord": {
+              "cname": "[variables('armCNAME')]"
+            }
+          }
+        },
+        {
+          "apiVersion": "2016-08-01",
+          "name": "[concat(variables('appName'),'/arm.',variables('dnsZone'))]",
+          "type": "Microsoft.Web/sites/hostNameBindings",
+          "location": "[resourceGroup().location]",
+          "dependsOn": ["[variables('dnsZone')]"],
+          "properties": {
+            "domainId": null,
+            "hostNameType": "Verified",
+            "siteName": "[variables('appName')]"
+          }
+        }
+      ]
+    ],
+    "armCNAME": "[concat(variables('appName'),'.azurewebsites.net')]",
+    "certName": "[concat(variables('dnsZone'),'-cert')]",
+    "certThumbprint": "[replace(parameters('certThumbprint'),' ','')]",
+    "tlsToggle": "[mul(length(replace(take(string(length(parameters('pfxBlob'))),1),'0','')),variables('dnsToggle'))]",
+    "tlsResources": [
+      [],
+      [{
+        "name": "[variables('certName')]",
+        "apiVersion": "2016-03-01",
+        "type": "Microsoft.Web/certificates",
+        "location": "[resourceGroup().location]",
+        "properties": {
+          "pfxBlob": "[parameters('pfxBlob')]",
+          "password": "[parameters('pfxPassword')]"
+        }
+      },{
+         "type":"Microsoft.Web/sites",
+         "name":"[variables('appName')]",
+         "apiVersion":"2016-03-01",
+         "location":"[resourceGroup().location]",
+         "dependsOn":["[variables('certName')]"],
+         "properties":{
+            "name":"[variables('appName')]",
+            "hostNameSslStates":[
+               {
+                  "name":"[concat('arm.',variables('dnsZone'))]",
+                  "sslState":"SniEnabled",
+                  "thumbprint":"[variables('certThumbprint')]",
+                  "toUpdate":true
+               }
+            ]
+         }
+      }]
+    ]
   },
   "resources": [{
     "name": "[variables('storageName')]",
@@ -33,7 +123,7 @@
     "kind": "Storage",
     "location": "[resourceGroup().location]",
     "properties": {}
-  },{
+  }, {
     "type": "Microsoft.Web/serverfarms",
     "apiVersion": "2016-03-01",
     "name": "[variables('serverFarmName')]",
@@ -48,7 +138,7 @@
       "family": "Y",
       "capacity": 0
     }
-  },{
+  }, {
     "apiVersion": "2016-03-01",
     "name": "[variables('appName')]",
     "type": "Microsoft.Web/sites",
@@ -73,7 +163,7 @@
         }, {
           "name": "WEBSITE_CONTENTSHARE",
           "value": "[toLower(variables('appName'))]"
-        },{
+        }, {
           "name": "FUNCTIONS_EXTENSION_VERSION",
           "value": "~1"
         }, {
@@ -86,21 +176,51 @@
       }
     },
     "resources": [{
-        "apiVersion": "2015-08-01",
-        "name": "web",
-        "type": "sourcecontrols",
-        "dependsOn": [
-          "[variables('appName')]"
-        ],
-        "properties": {
-          "mode": "Complete",
-          "repoUrl": "[parameters('repositoryUrl')]",
-          "branch": "[parameters('repositoryBranch')]",
-          "isManualIntegration": false,
-          "deploymentRollbackEnabled": false,
-          "isMercurial": false
-        }
+      "apiVersion": "2015-08-01",
+      "name": "web",
+      "type": "sourcecontrols",
+      "dependsOn": [
+        "[variables('appName')]"
+      ],
+      "properties": {
+        "mode": "Complete",
+        "repoUrl": "[parameters('repositoryUrl')]",
+        "branch": "[parameters('repositoryBranch')]",
+        "isManualIntegration": false,
+        "deploymentRollbackEnabled": false,
+        "isMercurial": false
       }
-    ]
+    }]
+  }, {
+    "name": "dns",
+    "type": "Microsoft.Resources/deployments",
+    "apiVersion": "2016-09-01",
+    "dependsOn": ["[variables('appName')]"],
+    "properties": {
+      "mode": "Incremental",
+      "template": {
+        "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+        "contentVersion": "1.0.0.0",
+        "resources": "[variables('dnsResources')[variables('dnsToggle')]]"
+      },
+      "parameters": {}
+    }
+  }, {
+    "name": "tls",
+    "type": "Microsoft.Resources/deployments",
+    "apiVersion": "2016-09-01",
+    "dependsOn": ["dns"],
+    "properties": {
+      "mode": "Incremental",
+      "template": {
+        "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+        "contentVersion": "1.0.0.0",
+        "variables": {
+          "foo":"bar"
+        },
+        "resources": "[variables('tlsResources')[variables('tlsToggle')]]"
+      },
+      "parameters": {}
+    }
   }]
 }
