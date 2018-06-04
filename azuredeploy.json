@@ -90,28 +90,7 @@
             "family": "A",
             "name": "standard"
           },
-          "accessPolicies": [
-          {
-            "tenantId": "59d07165-ee84-4375-a755-282c8ebeabdf",
-            "objectId": "a5caf20e-6cdf-42a0-ace7-0e22e9060739",
-            "permissions": {
-              "keys": [
-                "Backup",
-                "Create",
-                "Delete",
-                "Get",
-                "Import",
-                "List",
-                "Restore",
-                "Update"
-              ],
-              "secrets": [
-                "All"
-              ],
-              "certificates": []
-            }
-          }
-        ],
+          "accessPolicies": [],
           "enabledForTemplateDeployment": true
         },
         "resources": [{
